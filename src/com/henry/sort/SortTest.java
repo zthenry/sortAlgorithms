@@ -32,7 +32,8 @@ public class SortTest
         int[] a = new int[]{1,4,3,9,5,7,10,30,20,11};
         //InsertionSort sort = new InsertionSort();
         //BubbleSort sort = new BubbleSort();
-        HeapSort sort = new HeapSort();
+//        HeapSort sort = new HeapSort();
+        QuickSort sort = new QuickSort();
         sort.sort(a);
         for (int i = 0; i < a.length; i++)
         {
