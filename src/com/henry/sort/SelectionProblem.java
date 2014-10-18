@@ -13,7 +13,7 @@ package com.henry.sort;
 
 /**
  * 求第i小个数
- * <功能详细描述>
+ * 求第i大数就等同于求第n-i小数
  * 
  * @author  root
  * @version  [版本号, 2014-10-18]
