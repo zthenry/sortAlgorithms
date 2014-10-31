@@ -1,6 +1,5 @@
 /*
  * 文 件 名:  CountingSort.java
- * 版    权:  Huawei Technologies Co., Ltd. Copyright YYYY-YYYY,  All rights reserved
  * 描    述:  <描述>
  * 修 改 人:  root
  * 修改时间:  2014-10-17
