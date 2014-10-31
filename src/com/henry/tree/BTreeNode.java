@@ -135,10 +135,10 @@ public class BTreeNode
             return null;
         }
         int index = 0;
-        for (index = 0; index < keyList.length; index++)
+        for (index = 0; index < size; index++)
         {
             int value = keyList[index];
-            if (value < key)
+            if (value >= key)
             {
                 break;
             }
@@ -149,6 +149,7 @@ public class BTreeNode
             return new SearchResult(this, index);
         }
         
+        //叶节点没有子树，没有找到
         if (isLeaf)
         {
             return null;
