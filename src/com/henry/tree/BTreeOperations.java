@@ -31,7 +31,8 @@ public class BTreeOperations
      * @return
      * @see [类、类#方法、类#成员]
      */
-    public SearchResult searchBTree(BTreeNode node,int k){
+    public SearchResult searchBTree(BTreeNode node, int k)
+    {
         return node.searchKey(k);
     }
     
@@ -44,22 +45,25 @@ public class BTreeOperations
      * @return
      * @see [类、类#方法、类#成员]
      */
-    public BTreeNode insertBTree(BTree bt,int k){
+    public BTreeNode insertBTree(BTree bt, int k)
+    {
         BTreeNode root = bt.getRoot();
         if (root.isFull())
         {
-           /**
-            * 根节点满了
-            * 申请新的节点s
-            * 将s的子树指向root
-            * 对root进行拆分
-            * 拆分完成后进行插入操作
-            */
+            /**
+             * 根节点满了
+             * 申请新的节点s
+             * 将s的子树指向root
+             * 对root进行拆分
+             * 拆分完成后进行插入操作
+             */
             BTreeNode s = new BTreeNode(bt.getT());
-            s.getSubTreeNodeList()[0]=root;
+            s.getSubTreeNodeList()[0] = root;
             spiltChildBTree(s, 0, root);
             insertBTreeNonFull(s, k);
-        }else {
+        }
+        else
+        {
             insertBTreeNonFull(root, k);
         }
         return null;
@@ -75,32 +79,37 @@ public class BTreeOperations
      * @param k
      * @see [类、类#方法、类#成员]
      */
-    public void insertBTreeNonFull(BTreeNode currentNode,int k){
+    public void insertBTreeNonFull(BTreeNode currentNode, int k)
+    {
         int size = currentNode.getSize();
         int[] currKeys = currentNode.getKeyList();
         if (currentNode.isLeaf())
         {
             //将key放到叶节点中
             //key后移
-            int[] newBTreKeys = new int[size+1];
+            int[] newBTreKeys = new int[size + 1];
             
-            for (int i = size-1; i >=0; i--)
+            for (int i = size - 1; i >= 0; i--)
             {
-                if (currKeys[i]>k || (currKeys[i]<k && currKeys[i+1]>k))
+                if (currKeys[i] > k || (currKeys[i] < k && currKeys[i + 1] > k))
                 {
-                    newBTreKeys[i+1]=k;
-                    newBTreKeys[i]=currKeys[i];
-                }else{
-                    newBTreKeys[i]=currKeys[i];
+                    newBTreKeys[i + 1] = k;
+                    newBTreKeys[i] = currKeys[i];
+                }
+                else
+                {
+                    newBTreKeys[i] = currKeys[i];
                 }
                 
             }
             currentNode.setKeyList(newBTreKeys);
-        }else {
+        }
+        else
+        {
             int index = 0;
-            for (int i = size-1; i >=0; i--)
+            for (int i = size - 1; i >= 0; i--)
             {
-                if (currKeys[i]<k)
+                if (currKeys[i] < k)
                 {
                     index = i;
                     break;
@@ -113,7 +122,7 @@ public class BTreeOperations
             if (subBTreeNode.isFull())
             {
                 spiltChildBTree(currentNode, index, subBTreeNode);
-                if (k>currentNode.getKeyList()[index])
+                if (k > currentNode.getKeyList()[index])
                 {
                     index++;
                 }
@@ -121,6 +130,7 @@ public class BTreeOperations
             }
         }
     }
+    
     /**
      * 对节点进行拆分
      * 也就是将一个已经是full 的节点进行拆分，用中间的key进行分解，即索引是t-1, 拆分成 2个 t-1的节点，
@@ -130,10 +140,27 @@ public class BTreeOperations
      * @param child
      * @see [类、类#方法、类#成员]
      */
-    public void spiltChildBTree(BTreeNode parent,int index,BTreeNode child){
+    public void spiltChildBTree(BTreeNode parent, int index, BTreeNode child)
+    {
         BTreeNode newNode = new BTreeNode(child.getT());
         newNode.setLeaf(child.isLeaf());
         child.splitBTreeKey(parent, index, newNode);
+        
+    }
+    
+    
+    public void delete(BTreeNode root, int k)
+    {
+        SearchResult result = root.searchKey(k);
+        //k不在这个b-tree中，不需要进入算法
+        if (result == null)
+        {
+            return;
+        }
+        
+        //root
+        deleteFromBtree(root, k);
+        
         
     }
     
@@ -144,145 +171,204 @@ public class BTreeOperations
      * 有可能违反:除根节点外，其他节点的key数量不能小于t-1
      * 所以从节点内删除一个key的时候必须保证节点内key的数量删除之前必须大于t-1
      * case：
-     * 1.k在节点x中，且x是leaf，x的key的数量>t-1,直接删除k
+     * 1.k在节点x中，且x是leaf，直接删除k
      * 2.k在节点x中，且x是内部节点，按照如下流程进行:
      *   a.在x节点中,假设k的前继子树是y，y的key的数量至少有t,那么就可以将y中最大的k,我们记作ky=maxkey(y);
-     *     将ky从节点y中删除，然后用ky代替k即可
+     *     在x中用ky代替k，然后重新进入算法，入参是节点y,删除ky.
      *   b.如果前继子树key数量<t,那么查看k的后续子树的z,如果z的key的数量至少有t，那么就可以将z中最小的kz=minKey(z),
-     *     将kz从z中删除，用kz代替k即可
+     *     用kz代替k,重新进入算法，入参:节点z,删除kz，
      *   c.如果k的前继，后继子树的key数量都是t-1，那么将z merge到y,x节点中的k也将下移到y,x将失去k和指向z的子树指针，然后从y中将k删除
      *     
      * 3.如果x中不包含k,那么继续在子树中寻找，假设y肯定在这个B-tree中。
-     *   假设我们在w节点中找到了k,并且w是叶节点,且w的key数量=t-1(如果不是叶节点,那么就可以按照case2进行处理，如果是leaf,并且key num>t-1,按照case1处理)
-     *   a.如果w的相邻的右兄弟节点A的key数量>t-1,将指向这个子树相关位置的key从w的父节点p(w)移动到w中，然后从A中将最小的key替换p(w)中下移的key。
-     *     没有右兄弟节点，查看左兄弟节点，相关操作类似
-     *   b.如果w的相邻的右兄弟节点的key数量=t-1，那么合并两个兄弟节点，并且将对应的key从父节点下移到merge的中间节点。
-     * <功能详细描述>
+     *   假设k的下一个搜索路径在在x的第i个子节点Ci[x]中，如果Ci[x]key的size=t-1,则进入我们这个case3
+     *   我们用w表示Ci[x],size(w)=t-1,w肯定是有兄弟节点的。i为第i个子节点
+     *   a.如果w节点的相邻节点A是右节点，并且A的key数量>t-1,将A中最小的key,记作min(A)从A中删除，然后将min(A)replace他们父节点的第i个key，然后将第i个key转移到w
+     *     同时w新增的子节点是A的第一个子节点。现在明确了w和A的key和子树的更新关系。更新w和A的key和子树即可
+     *     
+     *     没有右兄弟节点，查看左兄弟节点B，并且B的key数量>t-1,将B中最大的key,记作max(B)从B中删除，然后将max(B)replace他们父节点的第i-1个key，然后将第i-1个key转移到w
+     *     同时w新增的子节点是B的最后一个子节点。现在明确了w和B的key和子树的更新关系。更新w和B的key和子树即可
+     *   b.如果w的相邻的兄弟节点的key数量都是t-1，那么合并两个兄弟节点，并且将对应的x中第i个key从父节点下移到merge的中间节点。
+     *   重新进入算法,参数:节点w,需要删除的k
+     * 
+     * 
+     * 这个算法的基本思想就是在进入到下一级的子节点时候，保证子节点的key数量至少是t,
+     * 这是为了在删除key的时候，保证每个node删除节点后，或者节点中的一个key下移后，节点key的数量依然不小于t-1
      * @param tree
      * @param k
      * @see [类、类#方法、类#成员]
      */
-    public void deleteKeyFromBTree(BTreeNode root,int k){
-        SearchResult result = root.searchKey(k);
-        BTreeNode node = result.getNode();
-        int t = root.getT();
-        if (node.isLeaf() && node.getSize() >= t)
+    public void deleteFromBtree(BTreeNode node, int k)
+    {
+        //case1:包含k，并且node是叶节点
+        if (node.contains(k) != -1 && node.isLeaf())
         {
-            node.deleteKForLeaf(result.getIndex(), k);
+            //直接删除k
+            int index = node.contains(k);
+            node.deleteKForLeaf(index, k);
             return;
-        }else if (node.isLeaf() && node.getSize() == t - 1)
+        }
+        
+        //case2：
+        int indexOfK = node.contains(k);
+        if (indexOfK != -1 && !node.isLeaf())
         {
-            BTreeNode parent = node.getParentNode();
-            BTreeNode[] subTreeNodeList = parent.getSubTreeNodeList();
-            int indexForSubTree = 0;
-            for (int i = 0; i < subTreeNodeList.length; i++)
+            //k后继节点
+            BTreeNode successor = node.getSubTreeNodeList()[indexOfK + 1];
+            
+            //k前继节点
+            BTreeNode preNode = node.getSubTreeNodeList()[indexOfK];
+            if (!preNode.isSizeMin())
             {
-                if (subTreeNodeList[i] == node)
-                {
-                    indexForSubTree = i;
-                    break;
-                }
+                int maxKey = preNode.getKeyList()[preNode.getSize() - 1];
+                node.replace(indexOfK, maxKey);
+                preNode.replace(preNode.getSize()-1, k);
                 
+            }else if(!successor.isSizeMin()){
+                int minKey = successor.getKeyList()[0];
+                node.replace(indexOfK, minKey);
+                successor.replace(0, k);
+            }else {
+                merge(preNode, successor, k);
+                //父节点删除key，删除子树
+                node.delete(indexOfK, 1);
             }
-            //有右兄弟节点
-            if (indexForSubTree < parent.getSize())
+            indexOfK = node.contains(k);
+            BTreeNode newSubNode = node.getSubTreeNodeList()[indexOfK];
+            deleteFromBtree(newSubNode, k);
+            
+        }
+        
+       
+        //获取下一级搜索的节点
+        int subNodeIndex = node.next(k);
+        BTreeNode[] subNodesList = node.getSubTreeNodeList();
+        BTreeNode subNode = subNodesList[subNodeIndex];
+        if (subNode.isSizeMin())
+        {
+            //进入case3
+            
+            //一定有左兄弟
+            if (subNodeIndex > 0)
             {
-                BTreeNode rightBrotherNode = subTreeNodeList[indexForSubTree + 1];
-                if (rightBrotherNode.getSize() > t - 1)
+                /**
+                 * 最后一个子树,所有没有右兄弟节点
+                 * 获取左兄弟节点
+                 */
+                
+                int[] nodeKeys = node.getKeyList();
+                BTreeNode leftNode = subNodesList[subNodeIndex - 1];
+                if (!leftNode.isSizeMin())
                 {
-                    int indexForKey = result.getIndex();
-                    int moveLowerKey = parent.getKeyList()[indexForSubTree];
-                    int moveUpKey = rightBrotherNode.getKeyList()[0];
-                    parent.getKeyList()[indexForSubTree] = moveUpKey;
-                    node.replace(indexForKey, moveLowerKey);
+                    int leftNodeMaxKey = leftNode.getKeyList()[leftNode.getSize() - 1];
+                    BTreeNode leftNodeSubNode = leftNode.getSubTreeNodeList()[leftNode.getSize()];
+                    int key = nodeKeys[subNodeIndex];
+                    
+                    //将左节点的最大key上移到父节点
+                    node.getKeyList()[subNodeIndex] = leftNodeMaxKey;
+                    
+                    //node节点的key下移到subNode节点
+                    subNode.add(0, key, leftNodeSubNode, 0);
+                    
+                    //左兄弟节点删除移动的key和移动的子树
+                    leftNode.delete(leftNode.getSize(), 1);
+                    
                 }
                 else
                 {
-                    //右兄弟节点key==t-1,合并两个节点，并将父节点对应的key下移,判断父节点此时的key的数量>t-1,如果不满足条件，则将合并后的节点最大key上移
-                    if (!parent.isSizeMin())
-                    {
-                        //t-1 + t-1 + 1 + -1 
-                        int[] newkeyList = new int[2*t-2];
-                        for (int i = 0; i < t-1; i++)
-                        {
-                            if (node.getKeyList()[i]!=k)
-                            {
-                                newkeyList[i]=node.getKeyList()[i];
-                            }else
-                            {
-                                newkeyList[i]=parent.getKeyList()[indexForSubTree];
-                            }
-                            
-                        }
-                        
-                        for (int i = 0; i < t-1; i++)
-                        {
-                            //合并的key
-                            newkeyList[i+t-1]=rightBrotherNode.getKeyList()[i];
-                            
-                        }
-                        node.setKeyList(newkeyList);
-                        //删除父节点下移的key，父节点子树列表更新，删除指向右兄弟的指针
-                        parent.delete(indexForSubTree);
-                        
-                    }else {
-                        
-                    }
+                    merge(leftNode, subNode, nodeKeys[subNodeIndex]);
+                    //父节点删除key，删除子树
+                    node.delete(subNodeIndex, 1);
+                }
+                
+            }
+            else if (subNodeIndex == 0)
+            {
+                //只有有右兄弟节点
+                
+                BTreeNode[] nodeSubNodes = node.getSubTreeNodeList();
+                int[] nodeKeys = node.getKeyList();
+                BTreeNode rightNode = nodeSubNodes[subNodeIndex + 1];
+                if (!rightNode.isSizeMin())
+                {
+                    int rightNodeMinKey = rightNode.getKeyList()[rightNode.getSize() - 1];
+                    BTreeNode rightNodeSubNode = rightNode.getSubTreeNodeList()[rightNode.getSize()];
+                    int key = nodeKeys[subNodeIndex];
+                    
+                    //将右节点的最小key上移到父节点
+                    node.getKeyList()[subNodeIndex] = rightNodeMinKey;
+                    
+                    //node节点的key下移到subNode节点
+                    subNode.add(subNode.getSize(), key, rightNodeSubNode, 1);
+                    
+                    //右兄弟节点删除移动的key和移动的子树
+                    rightNode.delete(0, 0);
+                    
+                }
+                else
+                {
+                    //两个兄弟节点进行merge,右兄弟merge到左兄弟
+                    merge(subNode, rightNode, nodeKeys[subNodeIndex]);
+                    //父节点删除key，删除子树
+                    node.delete(subNodeIndex, 1);
                 }
             }
-            else if (indexForSubTree > 0)
-            {
-                //有左兄弟节点   
-            }
+            int newIndex = node.next(k);
             
-            return;
+            deleteFromBtree(node.getSubTreeNodeList()[newIndex], k);
         }
-        else if (!node.isLeaf())
+        
+    }
+    
+    /**
+     * 将右节点合并到左
+     * 并且在新的节点insert key
+     * <功能详细描述>
+     * @param lefNode
+     * @param right
+     * @param k
+     * @see [类、类#方法、类#成员]
+     */
+    private void merge(BTreeNode leftNode,BTreeNode rightNode,int k){
+        int t = leftNode.getT();
+        int[] mergekeyList = new int[2 * t - 1];
+        int[] leftKeys = leftNode.getKeyList();
+        int[] rightKeys = rightNode.getKeyList();
+        //key合并
+        for (int i = 0; i < mergekeyList.length; i++)
         {
-            //case2 node是内部节点
-            int indexForK = result.getIndex();
-            BTreeNode successor = node.getSubTreeNodeList()[indexForK+1];
-            BTreeNode preNode = node.getSubTreeNodeList()[indexForK];
-            if (preNode.getSize()>t-1)
+            if (i < t - 1)
             {
-                int maxKey = preNode.getKeyList()[preNode.getSize()-1];
-                node.getKeyList()[indexForK]=maxKey;
-                deleteKeyFromBTree(preNode, maxKey);
-            }else if (successor.getSize()>t-1){
-                int minKey = successor.getKeyList()[successor.getSize()-1];
-                node.getKeyList()[indexForK]=minKey;
-                deleteKeyFromBTree(successor, minKey);
-            }else {
-                //合并两个子树
-                int[] preKeyList = preNode.getKeyList();
-                int[] successorKeyList = successor.getKeyList();
-                int[] newKeyList = new int[2*t-1];
-                //key列表合并
-                for (int i = 0; i < t-1; i++)
-                {
-                    newKeyList[i]=preKeyList[i];
-                    newKeyList[2*t-2-i]=successorKeyList[t-2-i];
-                }
-                newKeyList[t-1]=k;
-                
-                //子树列表合并
-                BTreeNode[] preSubBTreeNode = preNode.getSubTreeNodeList();
-                BTreeNode[] successorSubBTreeNode = successor.getSubTreeNodeList();
-                BTreeNode[] newSubTreeList = new BTreeNode[2*t];
-                for (int i = 0; i < t; i++)
-                {
-                    newSubTreeList[i]=preSubBTreeNode[i];
-                    newSubTreeList[2*t-1-i]=successorSubBTreeNode[t-1-i];
-                }
-                
-                preNode.setKeyList(newKeyList);
-                preNode.setSubTreeNodeList(newSubTreeList);
-                
-                node.delete(indexForK);
-                
-                deleteKeyFromBTree(node.getSubTreeNodeList()[indexForK], k);
+                mergekeyList[i] = leftKeys[i];
+            }
+            else if (i == t - 1)
+            {
+                mergekeyList[i] = k;
+            }
+            else
+            {
+                mergekeyList[i] = rightKeys[i - t + 2];
             }
             
         }
+        
+        //子树合并
+        BTreeNode[] mergeBTreeNodes = new BTreeNode[2*t];
+        BTreeNode[] leftSubNodes = leftNode.getSubTreeNodeList();
+        BTreeNode[] rightSubNode = rightNode.getSubTreeNodeList();
+        for (int i = 0; i < mergeBTreeNodes.length; i++)
+        {
+            if (i < t)
+            {
+                mergeBTreeNodes[i] = leftSubNodes[i];
+            }else
+            {
+                mergeBTreeNodes[i] = rightSubNode[i - t];
+            }
+            
+        }
+        
+        leftNode.setKeyList(mergekeyList);
+        leftNode.setSubTreeNodeList(mergeBTreeNodes);
+        
     }
 }

@@ -259,42 +259,49 @@ public class BTreeNode
     }
     
     /**
-     * 分析:
-     * 这个key可能存在于内部节点，也有可能在叶节点，所有删除操作在任何节点都有可能发生
-     * 在不做任何判断的情况下，在一个节点内，将一个key删除，我们考虑一下，是否违反b-tree的性质
-     * 有可能违反:除根节点外，其他节点的key数量不能小于t-1
-     * 所以从节点内删除一个key的时候必须保证节点内key的数量删除之前必须大于t-1
-     * case：
-     * 1.k在节点x中，且x是leaf，x的key的数量>t-1,直接删除k
-     * 2.k在节点x中，且x是内部节点，按照如下流程进行:
-     *   a.在x节点中,假设k的前继子树是y，y的key的数量至少有t,那么就可以将y中最大的k,我们记作ky=maxkey(y);
-     *     将ky从节点y中删除，然后用ky代替k即可
-     *   b.如果前继子树key数量<t,那么查看k的后续子树的z,如果z的key的数量至少有t，那么就可以将z中最小的kz=minKey(z),
-     *     将kz从z中删除，用kz代替k即可
-     *   c.如果k的前继，后继子树的key数量都是t-1，那么将y,与z进行merge,父节点删除k
-     *     如果x中的原key数量=t-1，在z合并到y后，将merge后最大的key代替x中的k。
-     * 3.如果x中不包含k,那么继续在子树中寻找，假设y肯定在这个B-tree中。
-     *   假设我们在w节点中找到了k,并且w是叶节点,且w的key数量=t-1(如果不是叶节点,那么就可以按照case2进行处理，如果是leaf,并且key num>t-1,按照case1处理)
-     *   a.如果w的相邻的右兄弟节点A的key数量>t-1,将指向这个子树相关位置的key从w的父节点p(w)移动到w中，然后从A中将最小的key替换p(w)中下移的key。
-     *     没有右兄弟节点，查看左兄弟节点，相关操作类似
-     *   b.如果w的相邻的右兄弟节点的key数量=t-1，那么合并两个兄弟节点，并且将对应的key从父节点下移到merge的中间节点。如果父节点数量此刻小于t-1,那么将merge后的
-     *     节点的最大key放到相关位置即可  
+     * 删除key,在删除key的同时，需要移除一个子树，direction决定了移除哪个子树
+     * direction 0 是左 1是右
+     * <功能详细描述>
+     * @param index
+     * @param direction
+     * @see [类、类#方法、类#成员]
      */
-    public void delete(int index)
+    public void delete(int index,int direction)
     {
         //删除节点中的index位置的key
-        for (int i = index; i < size-1; i++)
+        int[] newKeyList = new int[size-1];
+        for (int i = 0; i < size-1; i++)
         {
-            keyList[index]=keyList[i+1];
+            if (i<index)
+            {
+                newKeyList[i] = keyList[i];
+            }
+            else if(i>index){
+                newKeyList[i] = keyList[i+1];
+            }
         }
-        keyList[size-1]=Integer.MAX_VALUE;
+        
+        if (direction==1)
+        {
+            index++;
+        }
         //删除key，对应的右子树的指针删除
-        for (int i = index+1; i < size-1; i++)
+        BTreeNode[] newSubNodeLis = new BTreeNode[size];
+        for (int i = 0; i < size; i++)
         {
-            subTreeNodeList[i]=subTreeNodeList[i+1];
+            if (i<index)
+            {
+                newSubNodeLis[i] = subTreeNodeList[i];
+            }
+            else if(i>index){
+                newSubNodeLis[i] = subTreeNodeList[i+1];
+            }
         }
+        
+        subTreeNodeList=newSubNodeLis;
+        keyList=newKeyList;
     }
-    
+
     public void deleteKForLeaf(int index, int k)
     {
         if (isLeaf && index > -1)
@@ -329,4 +336,88 @@ public class BTreeNode
         }
     }
     
+    public int contains(int k){
+        int index = -1;
+        for (int i = 0; i < size; i++)
+        {
+            if(keyList[i]==k){
+                index=i;
+            }
+        }
+        return index;
+    }
+    
+    /**
+     * 检索k，进入下一级节点
+     * <功能详细描述>
+     * @param k
+     * @return
+     * @see [类、类#方法、类#成员]
+     */
+    public int next(int k){
+        int index = -1;
+        for (int i = 0; i < size; i++)
+        {
+            if(keyList[i]>k){
+                index=i;
+                break;
+            }
+        }
+        if (keyList[size-1]<k)
+        {
+            return size;
+        }
+        return index;
+    }
+    
+   /**
+    * 在index位置，插入k
+    * 并且插入子节点 newSubNode
+    * 如果direction=0,newSubNode插入在index
+    * 如果direction=1,newSubNode插入在index+1
+    * <功能详细描述>
+    * @param index
+    * @param k
+    * @param newSubNode
+    * @param direction
+    * @see [类、类#方法、类#成员]
+    */
+    public void add(int index,int k,BTreeNode newSubNode,int direction){
+        
+        int[] newKeyListOfSubNode = new int[keyList.length+1];
+        BTreeNode[] newSubNodeListOfSubNode = new BTreeNode[subTreeNodeList.length+1];
+        for (int i = 0; i < keyList.length+1; i++)
+        {
+            if (i<index)
+            {
+                newKeyListOfSubNode[i]=keyList[i];
+            }else if (i==index)
+            {
+                newKeyListOfSubNode[i]=k;
+            }else {
+                newKeyListOfSubNode[i]=keyList[i-1];
+            }
+        }
+        
+        //subNode 的 subNode
+        if (direction==1)
+        {
+            index++;
+        }
+        for (int i = 0; i < subTreeNodeList.length+1; i++)
+        {
+            if (i<index)
+            {
+                newSubNodeListOfSubNode[i]=subTreeNodeList[i];
+            }else if (i==0)
+            {
+                //左兄弟节点的子树移动到右边
+                newSubNodeListOfSubNode[i]=newSubNode;
+            }else {
+                newSubNodeListOfSubNode[i]=subTreeNodeList[i-1];
+            }
+        }
+        keyList = newKeyListOfSubNode;
+        subTreeNodeList = newSubNodeListOfSubNode;
+    }
 }
