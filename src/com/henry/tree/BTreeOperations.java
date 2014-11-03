@@ -182,10 +182,12 @@ public class BTreeOperations
      * 3.如果x中不包含k,那么继续在子树中寻找，假设y肯定在这个B-tree中。
      *   假设k的下一个搜索路径在在x的第i个子节点Ci[x]中，如果Ci[x]key的size=t-1,则进入我们这个case3
      *   我们用w表示Ci[x],size(w)=t-1,w肯定是有兄弟节点的。i为第i个子节点
-     *   a.如果w节点的相邻节点A是右节点，并且A的key数量>t-1,将A中最小的key,记作min(A)从A中删除，然后将min(A)replace他们父节点的第i个key，然后将第i个key转移到w
+     *   a.如果w节点的相邻节点A是右节点，并且A的key数量>t-1,将A中最小的key,记作min(A)从A中删除，
+     *     然后将min(A)replace他们父节点的第i个key，然后将第i个key转移到w
      *     同时w新增的子节点是A的第一个子节点。现在明确了w和A的key和子树的更新关系。更新w和A的key和子树即可
      *     
-     *     没有右兄弟节点，查看左兄弟节点B，并且B的key数量>t-1,将B中最大的key,记作max(B)从B中删除，然后将max(B)replace他们父节点的第i-1个key，然后将第i-1个key转移到w
+     *     没有右兄弟节点，查看左兄弟节点B，并且B的key数量>t-1,将B中最大的key,记作max(B)从B中删除，
+     *     然后将max(B)replace他们父节点的第i-1个key，然后将第i-1个key转移到w
      *     同时w新增的子节点是B的最后一个子节点。现在明确了w和B的key和子树的更新关系。更新w和B的key和子树即可
      *   b.如果w的相邻的兄弟节点的key数量都是t-1，那么合并两个兄弟节点，并且将对应的x中第i个key从父节点下移到merge的中间节点。
      *   重新进入算法,参数:节点w,需要删除的k
